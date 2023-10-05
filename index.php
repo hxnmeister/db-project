@@ -1,4 +1,9 @@
-<?php require_once './connect.php'; ?>
+<?php 
+    require_once './connect.php';
+    require_once './Message.php';
+    use db\Message;
+    session_start();
+?>
 
 <!DOCTYPE html>
     <html lang="en">
@@ -12,10 +17,10 @@
             <h1>CRUD authors</h1>
 
             <?php
+                Message::show();
+                
                 if(isset($_POST['add']))
                 {
-                    //додаємо автора
-
                     $name = $_POST['name'] ?? '';
 
                     if(empty($name))
@@ -33,6 +38,11 @@
                         header('Location: ./index.php');
                     }
                 }
+                elseif(isset($_POST['delete']))
+                {
+                    $stmt = $pdo->prepare("delete from authors where id=:authorId");
+                    $stmt->execute(['authorId' => $_GET['id']]);
+                }
 
                 $stmt = $pdo->query('select * from authors');
                 $authors = $stmt->fetchAll();
@@ -49,7 +59,17 @@
                         <tr>
                             <td><?= $author->id ?></td>
                             <td><?= $author->name ?></td>
-                            <td></td>
+                            <td><?php array_map(function($title) { echo $title; },$pdo->query('select title from books where author_id='.$author->id)->fetchAll(PDO::FETCH_COLUMN))?></td>
+                            <td class="float-end d-flex">
+                                <a href="./edit-author.php?id=" class="btn btn-outline-secondary me-1">
+                                    <img src="./images/edit-icon.png" alt="edit"> 
+                                </a>
+                                <form action="./index.php?id=<?= $author->id ?>" method="post">
+                                    <button class="btn btn-outline-danger" name="delete">
+                                        <img src="./images/delete-icon.png" alt="delete">
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </table>
